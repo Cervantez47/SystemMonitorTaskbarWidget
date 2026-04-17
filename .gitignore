@@ -10,7 +10,6 @@ __pycache__/
 # PyInstaller build output
 dist/
 build/
-*.spec
 
 # Runtime state (local to each machine)
 state.json

@@ -90,7 +90,7 @@ SystemMonitorTaskbarWidget/
 - [x] Write .gitignore
 - [x] Write build.bat (PyInstaller packaging script)
 - [x] Initialize git repo and push to GitHub (Cervantez47/SystemMonitorTaskbarWidget)
-- [ ] Package with PyInstaller → `.exe` (run build.bat)
+- [x] Package with PyInstaller → `dist\SystemMonitorTaskbarWidget.exe` (36 MB standalone)
 
 ---
 
