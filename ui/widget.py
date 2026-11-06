@@ -30,21 +30,25 @@ _STATE_FILE = os.path.join(
 )
 
 
-def _load_corner() -> str:
+def _load_state() -> dict:
     try:
         with open(_STATE_FILE) as f:
-            return json.load(f).get("corner", "bottom-right")
+            return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return "bottom-right"
+        return {}
 
 
-def _save_corner(corner: str):
+def _save_state(corner: str, monitor):
     os.makedirs(os.path.dirname(_STATE_FILE), exist_ok=True)
     try:
         with open(_STATE_FILE, "w") as f:
-            json.dump({"corner": corner}, f)
+            json.dump({"corner": corner, "monitor": monitor}, f)
     except OSError:
         pass
+
+
+def _screens_left_to_right() -> list:
+    return sorted(QApplication.screens(), key=lambda s: (s.geometry().x(), s.geometry().y()))
 
 
 class MonitorWidget(QWidget):
@@ -52,7 +56,10 @@ class MonitorWidget(QWidget):
         super().__init__()
         self._net = NetworkMonitor()
         self._disk_data = []
-        self._corner = _load_corner()
+        state = _load_state()
+        self._corner = state.get("corner", "bottom-right")
+        # Monitor index in left-to-right order; None = primary screen
+        self._monitor = state.get("monitor")
 
         self._setup_window()
         self._setup_labels()
@@ -119,10 +126,18 @@ class MonitorWidget(QWidget):
     # Corner positioning
     # ------------------------------------------------------------------
 
+    def _target_screen(self):
+        """Selected monitor, falling back to primary if it's no longer connected."""
+        screens = _screens_left_to_right()
+        if isinstance(self._monitor, int) and 0 <= self._monitor < len(screens):
+            return screens[self._monitor]
+        return QApplication.primaryScreen()
+
     def _reposition(self):
-        """Move widget to the current corner of the primary screen."""
-        screen    = QApplication.primaryScreen().geometry()
-        available = QApplication.primaryScreen().availableGeometry()
+        """Move widget to the current corner of the selected monitor."""
+        target    = self._target_screen()
+        screen    = target.geometry()
+        available = target.availableGeometry()
         w   = self.width()
         h   = WIDGET_HEIGHT
         pad = WIDGET_PADDING_RIGHT
@@ -153,7 +168,15 @@ class MonitorWidget(QWidget):
         """Advance to the next corner and persist the choice."""
         idx = CORNERS.index(self._corner) if self._corner in CORNERS else 0
         self._corner = CORNERS[(idx + 1) % len(CORNERS)]
-        _save_corner(self._corner)
+        _save_state(self._corner, self._monitor)
+        self._reposition()
+
+    def cycle_monitor(self):
+        """Advance to the next monitor (left to right) and persist the choice."""
+        screens = _screens_left_to_right()
+        current = screens.index(self._target_screen())
+        self._monitor = (current + 1) % len(screens)
+        _save_state(self._corner, self._monitor)
         self._reposition()
 
     # ------------------------------------------------------------------

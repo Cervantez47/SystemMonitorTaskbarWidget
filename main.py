@@ -24,8 +24,9 @@ def main():
     tray = TrayIcon(widget)
     tray.show()
 
-    # Register Ctrl+Alt+Z global hotkey → cycle widget corner
-    hotkey_filter = GlobalHotkeyFilter(widget.cycle_corner)
+    # Register Ctrl+Alt+Z global hotkey → cycle widget corner.
+    # Bind to widget HWND so WM_HOTKEY is routed to the window's message pump.
+    hotkey_filter = GlobalHotkeyFilter(widget.cycle_corner, widget.winId())
     app.installNativeEventFilter(hotkey_filter)
 
     ret = app.exec_()

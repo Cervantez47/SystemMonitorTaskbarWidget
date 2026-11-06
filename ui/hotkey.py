@@ -15,10 +15,13 @@ WM_HOTKEY     = 0x0312
 class GlobalHotkeyFilter(QAbstractNativeEventFilter):
     """Installs a Win32 global hotkey and calls `on_corner_cycle` when triggered."""
 
-    def __init__(self, on_corner_cycle):
+    def __init__(self, on_corner_cycle, hwnd):
         super().__init__()
         self._callback = on_corner_cycle
-        ok = ctypes.windll.user32.RegisterHotKey(None, HOTKEY_ID, MOD_CONTROL | MOD_ALT, VK_Z)
+        # Binding to a real HWND ensures WM_HOTKEY is dispatched to the window's
+        # message pump, so Qt's nativeEventFilter reliably receives it.
+        self._hwnd = int(hwnd)
+        ok = ctypes.windll.user32.RegisterHotKey(self._hwnd, HOTKEY_ID, MOD_CONTROL | MOD_ALT, VK_Z)
         if not ok:
             print("[hotkey] WARNING: Could not register Ctrl+Alt+Z — already in use?")
 
@@ -34,4 +37,4 @@ class GlobalHotkeyFilter(QAbstractNativeEventFilter):
         return False, 0
 
     def unregister(self):
-        ctypes.windll.user32.UnregisterHotKey(None, HOTKEY_ID)
+        ctypes.windll.user32.UnregisterHotKey(self._hwnd, HOTKEY_ID)

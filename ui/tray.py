@@ -34,6 +34,10 @@ class TrayIcon(QSystemTrayIcon):
         show_action.triggered.connect(self._toggle_visibility)
         menu.addAction(show_action)
 
+        monitor_action = QAction("Move to next monitor", menu)
+        monitor_action.triggered.connect(self._widget.cycle_monitor)
+        menu.addAction(monitor_action)
+
         menu.addSeparator()
 
         # Startup toggle — reflects current registry state
